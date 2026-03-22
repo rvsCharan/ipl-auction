@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Player {
+  id          Int      @id @default(autoincrement())
+  name        String
+  role        String   // BAT, BOWL, ALL, WK
+  nationality String
+  isCapped    Boolean  @default(true)
+  basePrice   Int      // in lakhs
+  set         Int      // marquee set number
+  imageUrl    String?
+  lastTeam    String?  // last IPL team
+  matches     Int      @default(0)
+  runs        Int      @default(0)
+  wickets     Int      @default(0)
+  strikeRate  Float    @default(0)
+  economy     Float    @default(0)
+  average     Float    @default(0)
+  soldIn      SoldPlayer[]
+}
+
+model Room {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  hostName  String
+  status    String   @default("lobby") // lobby, live, paused, finished
+  purse     Int      @default(12000)   // in lakhs (120 Cr)
+  maxTeams  Int      @default(10)
+  currentSet    Int  @default(1)
+  currentIdx    Int  @default(0)
+  createdAt DateTime @default(now())
+  teams     Team[]
+  soldPlayers SoldPlayer[]
+}
+
+model Team {
+  id        String   @id @default(cuid())
+  name      String   // franchise name e.g. "CSK"
+  ownerName String   // player's display name
+  purse     Int      @default(12000)
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  soldPlayers SoldPlayer[]
+
+  @@unique([roomId, name])
+}
+
+model SoldPlayer {
+  id        String   @id @default(cuid())
+  playerId  Int
+  player    Player   @relation(fields: [playerId], references: [id])
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  soldPrice Int      // in lakhs
+
+  @@unique([playerId, roomId])
+}
