@@ -10,24 +10,24 @@ const { setupSocket } = require('./socket/auction');
 const app = express();
 const server = createServer(app);
 
+const isProd = process.env.NODE_ENV === 'production';
+
 const io = new Server(server, {
-  cors: { origin: process.env.CLIENT_URL || 'http://localhost:5173', methods: ['GET', 'POST'] }
+  cors: { origin: isProd ? '*' : 'http://localhost:5173', methods: ['GET', 'POST'] }
 });
 
 app.use(cors());
 app.use(express.json());
 
-// API routes
 app.use('/api/rooms', roomRoutes);
 app.use('/api/players', playerRoutes);
 
-// Serve static frontend in production
-if (process.env.NODE_ENV === 'production') {
+// Serve frontend in production
+if (isProd) {
   app.use(express.static(path.join(__dirname, '../../client/dist')));
   app.get('*', (_, res) => res.sendFile(path.join(__dirname, '../../client/dist/index.html')));
 }
 
-// Socket.IO
 setupSocket(io);
 
 const PORT = process.env.PORT || 3000;
